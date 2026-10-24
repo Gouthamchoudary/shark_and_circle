@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SHARK BRAIN — Pure Neuroevolution Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      background-color: #04070f;
+      background-image:
+        radial-gradient(1000px 550px at 18% -5%, rgba(34, 211, 238, 0.08), transparent 60%),
+        radial-gradient(900px 500px at 88% 105%, rgba(52, 245, 160, 0.06), transparent 60%);
+      color: #e6edf7;
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #060a14; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    input[type="range"] { accent-color: #22d3ee; }
+    .card-glass {
+      background: linear-gradient(180deg, rgba(15, 24, 42, 0.92), rgba(9, 15, 28, 0.96));
+      border: 1px solid rgba(30, 45, 74, 0.85);
+      box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.7);
+    }
+    .stage-btn.active {
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(52, 245, 160, 0.16));
+      border-color: #22d3ee;
+      color: #ffffff;
+    }
+    .speed-chip.active, .gen-chip.active {
+      background-color: #22d3ee;
+      color: #02131a;
+      border-color: #22d3ee;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-400 selection:text-slate-950">
+
+  <!-- TOP BAR -->
+  <header class="border-b border-slate-800/80 bg-[#060a15]/90 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-[1400px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="px-2.5 py-1 rounded-md bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-[11px] font-extrabold tracking-wider uppercase flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+          ZERO REWARD SHAPING
+        </div>
+        <h1 class="text-base sm:text-lg font-black tracking-tight text-white">
+          SHARK BRAIN <span class="text-slate-500 font-normal mx-1">·</span> Genetic Swarm vs. <span id="headerKBadge" class="text-rose-400">3.60×</span> Shark
+        </h1>
+      </div>
+
+      <!-- 5 Level Presets -->
+      <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-2 hidden sm:inline">LEVELS:</span>
+        <button data-k="3.00" class="stage-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-transparent text-slate-400 hover:text-white transition">L1 <span class="mono text-[10px] opacity-80">3.0×</span></button>
+        <button data-k="3.30" class="stage-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-transparent text-slate-400 hover:text-white transition">L2 <span class="mono text-[10px] opacity-80">3.3×</span></button>
+        <button data-k="3.60" class="stage-btn active px-2.5 py-1 rounded-lg text-xs font-bold border border-transparent text-slate-400 hover:text-white transition">L3 <span class="mono text-[10px] opacity-80">3.6×</span></button>
+        <button data-k="4.00" class="stage-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-transparent text-slate-400 hover:text-white transition">L4 <span class="mono text-[10px] opacity-80">4.0×</span></button>
+        <button data-k="4.25" class="stage-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-transparent text-slate-400 hover:text-white transition">L5 <span class="mono text-[10px] opacity-80">4.25×</span></button>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-1.5">
+        <button id="btnHuman" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition">
+          🎮 <span id="humanBtnText">Play Yourself</span>
+        </button>
+        <button id="btnScreenshotModal" class="px-3 py-1.5 rounded-lg text-xs font-extrabold border border-emerald-500/50 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition">
+          📸 Solution Screenshot
+        </button>
+        <button id="btnPythonModal" class="px-2.5 py-1.5 rounded-lg text-xs font-bold border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition">
+          🐍 Python Code
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-[1400px] w-full mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_370px] gap-4 items-start">
+
+    <!-- LEFT: POND STAGE, TRANSPORT BAR & GENERATION TIMELINE -->
+    <div class="flex flex-col gap-3">
+      <div class="card-glass rounded-2xl relative overflow-hidden aspect-[16/10] min-h-[360px] flex items-center justify-center">
+        <canvas id="pondCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <!-- TOP-LEFT HUD -->
+        <div class="absolute top-3 left-3 pointer-events-none bg-[#050914]/85 backdrop-blur-md border border-slate-800/90 rounded-xl p-3 shadow-xl min-w-[205px] flex flex-col gap-1">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1 mb-0.5">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400">GENETIC SWARM</span>
+            <span id="hudGenBadge" class="text-[10px] mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">GEN 1</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400 font-semibold">SHORE OUTCOMES</span>
+            <div class="mono font-bold text-xs flex items-center gap-2">
+              <span class="text-emerald-400" title="Escaped">✔ <b id="hudEsc">0</b></span>
+              <span class="text-rose-400" title="Caught">✖ <b id="hudCaught">0</b></span>
+              <span class="text-slate-400" title="Timed Out">⏳ <b id="hudLost">0</b></span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400 font-semibold">HELD-OUT TEST</span>
+            <span id="hudTestMargin" class="mono text-xs font-extrabold text-emerald-400">--</span>
+          </div>
+          <div class="flex items-center justify-between text-xs border-t border-slate-800 pt-1 mt-0.5">
+            <span class="text-slate-400 font-semibold">SIM TIME</span>
+            <span class="mono text-xs font-bold text-slate-200"><b id="hudTime">0.0</b> s</span>
+          </div>
+        </div>
+
+        <!-- TOP-RIGHT PREDATOR BADGE -->
+        <div class="pointer-events-none absolute top-3 right-3 bg-[#050914]/85 backdrop-blur-md border border-rose-500/40 rounded-xl px-3.5 py-2 shadow-xl flex items-center gap-2.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></div>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-rose-300/80">SHARK SPEED</div>
+            <div class="mono text-xs sm:text-sm font-black text-white"><span id="hudK">3.60</span>× (<span id="hudCritR">R/k = 2.78m</span>)</div>
+          </div>
+        </div>
+
+        <!-- BOTTOM BANNER -->
+        <div id="statusBanner" class="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 w-[94%] max-w-2xl bg-[#050914]/90 backdrop-blur-md border border-cyan-500/40 rounded-xl px-4 py-2 text-center text-xs sm:text-sm font-bold text-slate-100 shadow-2xl">
+          Gen 1: 150 random neural networks start at (0,0) with zero movement rules and terminal-only shore reward.
+        </div>
+      </div>
+
+      <!-- TRANSPORT CONTROLS -->
+      <div class="card-glass rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button id="btnPlayPause" class="px-3.5 py-1.5 rounded-lg font-extrabold text-xs bg-cyan-400 hover:bg-cyan-300 text-slate-950 transition">
+            <span id="playIcon">⏸</span> <span id="playText">Pause</span>
+          </button>
+          <button id="btnSkipGen" class="px-3 py-1.5 rounded-lg font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            ⏭ Skip Playback
+          </button>
+          <button id="btnTrain10" class="px-3 py-1.5 rounded-lg font-extrabold text-xs bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 transition">
+            ⚡ Train +10 Gens
+          </button>
+          <button id="btnAutoSolve" class="px-3 py-1.5 rounded-lg font-extrabold text-xs bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 transition">
+            🏆 Auto-Solve & Screenshot
+          </button>
+          <button id="btnReset" class="px-2.5 py-1.5 rounded-lg font-bold text-xs bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 border border-slate-700 transition">
+            ↺ Reset
+          </button>
+        </div>
+
+        <!-- Speed Chips -->
+        <div class="flex items-center gap-1 bg-slate-950/90 p-1 rounded-lg border border-slate-800">
+          <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-1.5">SPEED:</span>
+          <button data-spd="0.25" class="speed-chip px-2 py-1 rounded text-[11px] mono text-slate-300 hover:bg-slate-800 transition">0.25×</button>
+          <button data-spd="0.5" class="speed-chip px-2 py-1 rounded text-[11px] mono text-slate-300 hover:bg-slate-800 transition">0.5×</button>
+          <button data-spd="1" class="speed-chip px-2 py-1 rounded text-[11px] mono text-slate-300 hover:bg-slate-800 transition">1×</button>
+          <button data-spd="2" class="speed-chip active px-2 py-1 rounded text-[11px] mono text-slate-300 hover:bg-slate-800 transition">2×</button>
+          <button data-spd="5" class="speed-chip px-2 py-1 rounded text-[11px] mono text-slate-300 hover:bg-slate-800 transition">5×</button>
+          <button data-spd="15" class="speed-chip px-2 py-1 rounded text-[11px] mono text-slate-300 hover:bg-slate-800 transition">15×</button>
+        </div>
+      </div>
+
+      <!-- GENERATION TIMELINE -->
+      <div class="card-glass rounded-xl p-3 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+            📜 Generation Replay Timeline <span class="text-slate-500 font-normal">(Click any generation to inspect its Champion & swarm)</span>
+          </h3>
+          <label class="flex items-center gap-1.5 text-xs font-bold text-cyan-300 cursor-pointer select-none">
+            <input id="chkAutoAdvance" type="checkbox" checked class="accent-cyan-400 rounded" />
+            <span>Auto-Advance</span>
+          </label>
+        </div>
+        <div id="genChipsContainer" class="flex flex-wrap gap-1.5 max-h-[78px] overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CONTROLS, LEARNING CURVE PLOT & LIVE NEURAL NETWORK -->
+    <aside class="flex flex-col gap-3">
+
+      <!-- HYPERPARAMETERS & REPRODUCIBLE SEED -->
+      <div class="card-glass rounded-2xl p-3.5 flex flex-col gap-2.5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <h2 class="text-xs font-black uppercase tracking-wider text-cyan-400">⚙️ Genetic Swarm Controls</h2>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold text-slate-400">SEED:</span>
+            <input id="inpSeed" type="number" value="42" class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-xs mono font-bold text-cyan-300 text-center" />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs font-bold mb-0.5">
+            <span class="text-slate-300">Shark Speed (<code class="mono text-rose-400">k</code>)</span>
+            <output id="outK" class="mono text-rose-400 font-extrabold">3.60×</output>
+          </div>
+          <input id="rngK" type="range" min="2.80" max="4.45" step="0.05" value="3.60" class="w-full" />
+        </div>
+
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <div class="flex justify-between text-[11px] font-bold mb-0.5">
+              <span class="text-slate-300">Pop <code class="mono text-cyan-300">N</code></span>
+              <output id="outPop" class="mono text-cyan-300 font-bold">150</output>
+            </div>
+            <input id="rngPop" type="range" min="60" max="260" step="20" value="150" class="w-full" />
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] font-bold mb-0.5">
+              <span class="text-slate-300">Elites</span>
+              <output id="outElite" class="mono text-amber-300 font-bold">10%</output>
+            </div>
+            <input id="rngElite" type="range" min="4" max="25" step="1" value="10" class="w-full" />
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] font-bold mb-0.5">
+              <span class="text-slate-300">Mut <code class="mono text-purple-300">σ</code></span>
+              <output id="outMut" class="mono text-purple-300 font-bold">1.0×</output>
+            </div>
+            <input id="rngMut" type="range" min="0.3" max="2.5" step="0.1" value="1.0" class="w-full" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px] font-semibold text-slate-300">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input id="chkShowCrowd" type="checkbox" checked class="accent-cyan-400" />
+            <span>Show All Swimmers</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input id="chkShowCritRing" type="checkbox" checked class="accent-amber-400" />
+            <span>Show <code class="mono text-amber-300">r = R/k</code> Circle</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- CONTINUOUS LINE PLOT: LEARNING CURVE & BASELINE -->
+      <div class="card-glass rounded-2xl p-3.5 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-black uppercase tracking-wider text-emerald-400">📈 Learning Curve (Shore Margin)</h3>
+          <span class="text-[10px] mono text-slate-400">8 Held-Out Angles</span>
+        </div>
+        <canvas id="curveCanvas" class="w-full h-[145px] rounded-xl bg-[#050914] border border-slate-800/90"></canvas>
+        <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold">
+          <span class="flex items-center gap-1 text-emerald-400"><span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span>Champion Held-Out Test (m)</span>
+          <span class="flex items-center gap-1 text-cyan-300"><span class="w-2.5 h-0.5 bg-cyan-300 inline-block"></span>Train Mean</span>
+          <span class="flex items-center gap-1 text-amber-300"><span class="w-2.5 h-0.5 bg-amber-300 inline-block"></span>Straight-Line Baseline</span>
+        </div>
+      </div>
+
+      <!-- LIVE CHAMPION NEURAL NETWORK -->
+      <div class="card-glass rounded-2xl p-3.5 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-black uppercase tracking-wider text-cyan-400">🧠 Champion MLP · 54 Weights</h3>
+          <span class="text-[10px] mono text-slate-400">4 → 10 (tanh) → 2</span>
+        </div>
+        <canvas id="netCanvas" class="w-full h-[155px] rounded-xl bg-[#050914] border border-slate-800/90"></canvas>
+        <p class="text-[11px] text-slate-400 leading-snug">
+          <strong class="text-slate-200">Terminal-Only Fitness:</strong> Swimmers receive <strong class="text-emerald-300">zero</strong> reward inside the pond. Fitness is strictly the shore arrival margin <code class="mono text-cyan-300">R(|Δθ| - δ_cap) - 0.02t</code>.
+        </p>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- MODAL 1: HIGH-RES OPTIMAL SOLUTION SCREENSHOT (4 HELD-OUT ANGLES) -->
+  <div id="screenshotModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-5">
+    <div class="card-glass rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-emerald-500/40 shadow-2xl">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 bg-[#060b16]">
+        <div>
+          <h3 class="font-black text-sm sm:text-base text-white">📸 Champion Solution Screenshot — 4 Held-Out Shark Angles</h3>
+          <p class="text-[11px] text-slate-400">Verification that the evolved neural network generalizes across unseen predator positions</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnDownloadPNG" class="px-3.5 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-extrabold text-xs transition shadow">
+            💾 Download PNG Screenshot
+          </button>
+          <button id="btnCloseScreenshot" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">
+            ✕ Close
+          </button>
+        </div>
+      </div>
+
+      <div class="p-4 sm:p-6 overflow-y-auto flex flex-col items-center gap-3 bg-[#040710]">
+        <canvas id="blueprintCanvas" width="800" height="560" class="w-full max-w-[760px] rounded-2xl border border-slate-800 shadow-2xl bg-[#050914]"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: MATCHING PYTHON CODE -->
+  <div id="pythonModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-5">
+    <div class="card-glass rounded-2xl max-w-4xl w-full max-h-[88vh] flex flex-col overflow-hidden border border-cyan-500/40 shadow-2xl">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-[#060b16]">
+        <h3 class="font-black text-sm sm:text-base text-white">🐍 Exact Matching Python Neuroevolution Code (Zero Reward Shaping)</h3>
+        <div class="flex items-center gap-2">
+          <button id="btnCopyPython" class="px-3 py-1.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-xs transition">
+            📋 Copy Python Code
+          </button>
+          <button id="btnClosePython" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">
+            ✕ Close
+          </button>
+        </div>
+      </div>
+      <div class="p-5 overflow-y-auto text-xs mono text-slate-200 bg-[#040710] leading-relaxed select-all">
+<pre id="pythonCodeText">import numpy as np
+import matplotlib.pyplot as plt
+
+# --- 1. ENVIRONMENT & ARCHITECTURE (ZERO REWARD SHAPING) ---
+R, DT, T_MAX, DELTA_CAP = 10.0, 0.08, 80.0, 0.03
+K_SHARK = 3.60
+N_POP, ELITE_FRAC, SEED = 150, 0.10, 42
+NI, NH, NO = 4, 10, 2
+NW = NI*NH + NH + NH*NO + NO
+
+# Fixed Train (4 angles) & Held-Out Test (8 angles)
+TRAIN_ANGLES = [-0.75*np.pi, -0.25*np.pi, 0.25*np.pi, 0.75*np.pi]
+TEST_ANGLES  = [(-0.875 + 0.25*i)*np.pi for i in range(8)]
+
+def wrap(a):
+    return (a + np.pi) % (2 * np.pi) - np.pi
+
+def forward(w, x, y, sh):
+    r = np.hypot(x, y)
+    th = np.arctan2(y, x) if r > 1e-6 else 0.0
+    gp = wrap(th - sh)
+    inp = np.array([r / R, np.cos(gp), np.sin(gp), 1.0])
+    W1 = w[:NI*NH].reshape(NH, NI)
+    b1 = w[NI*NH : NI*NH+NH]
+    W2 = w[NI*NH+NH : NI*NH+NH+NH*NO].reshape(NO, NH)
+    b2 = w[NI*NH+NH+NH*NO:]
+    h = np.tanh(W1 @ inp + b1)
+    o = W2 @ h + b2
+    return th + np.arctan2(o[0], o[1])
+
+def run_episode(w, sh_init, record=False):
+    x, y, sh, t, rmax = 0.0, 0.0, sh_init, 0.0, 0.0
+    traj = [(x, y)] if record else None
+    while t < T_MAX:
+        hd = forward(w, x, y, sh)
+        dx, dy = np.cos(hd)*DT, np.sin(hd)*DT
+        f, hit = 1.0, False
+        if np.hypot(x + dx, y + dy) >= R:
+            a = dx*dx + dy*dy
+            b = 2*(x*dx + y*dy)
+            c = x*x + y*y - R*R
+            f = (-b + np.sqrt(max(0.0, b*b - 4*a*c))) / (2*a)
+            hit = True
+        x += f*dx; y += f*dy; t += f*DT
+        if record: traj.append((x, y))
+        r = np.hypot(x, y)
+        th = np.arctan2(y, x)
+        gp = wrap(th - sh)
+        sh += np.sign(gp if gp != 0 else 1.0) * min(K_SHARK/R * DT * f, abs(gp))
+        if hit:
+            margin_m = (abs(wrap(th - sh)) - DELTA_CAP) * R
+            return margin_m - 0.02*t, margin_m, margin_m > 0, traj, sh
+        rmax = max(rmax, r)
+    # Timeout penalty based strictly on unreached radial distance
+    return -R*(1.0 - rmax/R) - 2.0, -R*(1.0 - rmax/R), False, traj, sh
+
+# --- 2. REPRODUCIBLE GENETIC EVOLUTION ---
+rng = np.random.default_rng(SEED)
+pop = [rng.normal(0, 0.8, NW) for _ in range(N_POP)]
+baseline_m = R * (np.pi / K_SHARK - DELTA_CAP)
+
+for gen in range(1, 31):
+    scored = []
+    for w in pop:
+        res = [run_episode(w, a) for a in TRAIN_ANGLES]
+        scored.append((np.mean([r[0] for r in res]), np.mean([r[1] for r in res]), w))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    champ = scored[0][2]
+    test_res = [run_episode(champ, a) for a in TEST_ANGLES]
+    test_margin = np.mean([r[1] for r in test_res])
+    test_esc = np.mean([r[2] for r in test_res]) * 100
+    if gen == 1 or gen % 5 == 0:
+        print(f"Gen {gen:02d} | Held-Out Test Margin: {test_margin:+.2f}m | Escaped: {test_esc:.0f}% (Baseline: {baseline_m:+.2f}m)")
+
+    n_el = max(4, int(N_POP * ELITE_FRAC))
+    elites = [s[2] for s in scored[:n_el]]
+    sigma = max(0.04, 0.35 * (0.965 ** gen))
+    next_pop = [e.copy() for e in elites]
+    while len(next_pop) < N_POP:
+        p1, p2 = elites[rng.integers(n_el)], elites[rng.integers(n_el)]
+        mask = rng.random(NW) < 0.5
+        child = np.where(mask, p1, p2) + (rng.random(NW) < 0.32) * rng.normal(0, sigma, NW)
+        next_pop.append(child)
+    pop = next_pop</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMULATION & ML ENGINE -->
+  <script>
+    (() => {
+      // --- 1. CONSTANTS & ARCHITECTURE ---
+      const R = 10.0;                 // Pond radius (meters)
+      const DT = 0.08;                // Integration step (seconds)
+      const F = Math.PI;
+      const TM = 80.0;                // Episode timeout (seconds)
+      const DELTA_CAP = 0.03;         // Capture angular threshold (radians, ~0.30m)
+      const NI = 4, NH = 10, NO = 2;  // 4 Inputs -> 10 Hidden (tanh) -> 2 Outputs
+      const NW = NI * NH + NH + NH * NO + NO; // 54 weights
+
+      // Fixed Train Set (4 angles) & Held-Out Test Set (8 unseen angles)
+      const TRAIN_ANGLES = [-0.75 * F, -0.25 * F, 0.25 * F, 0.75 * F];
+      const TEST_ANGLES = Array.from({ length: 8 }, (_, i) => (-0.875 + i * 0.25) * F);
+
+      const $ = id => document.getElementById(id);
+      const pondCanvas = $("pondCanvas"), ctx = pondCanvas.getContext("2d");
+      const curveCanvas = $("curveCanvas"), cx2 = curveCanvas.getContext("2d");
+      const netCanvas = $("netCanvas"), nx = netCanvas.getContext("2d");
+      const blueprintCanvas = $("blueprintCanvas"), bx = blueprintCanvas.getContext("2d");
+
+      // --- 2. DETERMINISTIC PRNG (MULBERRY32) ---
+      let seed = 42;
+      let rngState = 42;
+      function seedPRNG(s) {
+        rngState = (s >>> 0) || 1;
+      }
+      function rand() {
+        let t = (rngState += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+      function gauss() {
+        return Math.sqrt(-2.0 * Math.log(1.0 - Math.max(1e-9, rand()))) * Math.cos(2.0 * F * rand());
+      }
+      const wrap = a => {
+        a = (a + F) % (2 * F);
+        if (a < 0) a += 2 * F;
+        return a - F;
+      };
+
+      // --- 3. STATE ---
+      let K = 3.60;
+      let N = 150;
+      let EL = 0.10;
+      let MUT = 1.0;
+      let SPD = 2.0;
+
+      let humanMode = false;
+      let paused = false;
+      let autoAdvance = true;
+      let showCrowd = true;
+      let showCritRing = true;
+
+      let hist = [];
+      let nextPop = [];
+      let gi = 0;
+      let live = [];
+      let prevLive = [];
+      let stepAccum = 0.0;
+      let state = "run";
+      let holdTicks = 0;
+
+      let humAgent = null;
+      let humMsg = "";
+      let mouseWorld = { x: 0, y: 0 };
+      let viewGeom = { cx: 0, cy: 0, sc: 1 };
+      let lastActivations = null;
+      let shoreRipples = [];
+
+      // --- 4. NEURAL NETWORK FORWARD PASS ---
+      function forwardBrain(w, x, y, sh, recordAct = false) {
+        const r = Math.hypot(x, y);
+        const th = r > 1e-6 ? Math.atan2(y, x) : 0.0;
+        const gp = wrap(th - sh);
+        const inp = [r / R, Math.cos(gp), Math.sin(gp), 1.0];
+        const h = new Array(NH);
+        let k = 0;
+        for (let j = 0; j < NH; j++) {
+          let s = 0;
+          for (let i = 0; i < NI; i++) s += w[k++] * inp[i];
+          h[j] = Math.tanh(s + w[NI * NH + j]);
+        }
+        k = NI * NH + NH;
+        const o = new Array(NO);
+        for (let j = 0; j < NO; j++) {
+          let s = 0;
+          for (let i = 0; i < NH; i++) s += w[k++] * h[i];
+          o[j] = s + w[NI * NH + NH + NH * NO + j];
+        }
+        if (recordAct) lastActivations = { inp, h, o };
+        return th + Math.atan2(o[0], o[1]);
+      }
+
+      // --- 5. PHYSICS & TERMINAL-ONLY FITNESS ---
+      function createSwimmer(w, sharkStartAngle) {
+        return {
+          w,
+          x: 0.0,
+          y: 0.0,
+          sh: sharkStartAngle,
+          t: 0.0,
+          done: 0,
+          esc: 0,
+          lost: 0,
+          margin: 0.0, // Signed shore margin in meters: R * (|gap| - DELTA_CAP)
+          rmax: 0.0,
+          fit: 0.0,
+          hd: null,
+          tr: [[0.0, 0.0]]
+        };
+      }
+
+      function cloneState(s) {
+        return { x: s.x, y: s.y, sh: s.sh, t: s.t, done: s.done, esc: s.esc, lost: s.lost, margin: s.margin };
+      }
+
+      function stepSwimmer(e, spawnRipple = false) {
+        if (e.done) return;
+        const hd = e.hd != null ? e.hd : forwardBrain(e.w, e.x, e.y, e.sh);
+        const dx = Math.cos(hd) * DT;
+        const dy = Math.sin(hd) * DT;
+        let f = 1.0, hit = 0;
+
+        if (Math.hypot(e.x + dx, e.y + dy) >= R) {
+          const a = dx * dx + dy * dy;
+          const b = 2 * (e.x * dx + e.y * dy);
+          const c = e.x * e.x + e.y * e.y - R * R;
+          f = (-b + Math.sqrt(Math.max(0, b * b - 4 * a * c))) / (2 * a);
+          hit = 1;
+        }
+
+        e.x += f * dx;
+        e.y += f * dy;
+        e.t += DT * f;
+
+        const rNow = Math.hypot(e.x, e.y);
+        const th = Math.atan2(e.y, e.x);
+        const gp = wrap(th - e.sh);
+        const dir = gp >= 0 ? 1 : -1;
+        e.sh += dir * Math.min((K / R) * DT * f, Math.abs(gp));
+
+        if (hit) {
+          const signedMarginMeters = (Math.abs(wrap(th - e.sh)) - DELTA_CAP) * R;
+          e.margin = signedMarginMeters;
+          e.esc = signedMarginMeters > 0 ? 1 : 0;
+          e.done = 1;
+          // Pure boundary outcome fitness: signed shore margin minus tiny time tie-breaker
+          e.fit = signedMarginMeters - 0.02 * e.t;
+
+          if (spawnRipple && shoreRipples.length < 60) {
+            shoreRipples.push({
+              x: e.x,
+              y: e.y,
+              rad: 3,
+              alpha: 1.0,
+              color: e.esc ? "#34f5a0" : "#ff4d6d"
+            });
+          }
+        } else {
+          if (rNow > e.rmax) e.rmax = rNow;
+          if (e.t >= TM) {
+            e.done = 1;
+            e.lost = 1;
+            e.margin = -R * (1.0 - e.rmax / R);
+            e.fit = e.margin - 2.0;
+          }
+        }
+      }
+
+      function evaluateEpisode(w, shAngle) {
+        const e = createSwimmer(w, shAngle);
+        while (!e.done) stepSwimmer(e, false);
+        return e;
+      }
+
+      // --- 6. GENETIC EVOLUTION TRAINER (FIXED TRAIN / HELD-OUT TEST) ---
+      function trainOneGeneration(pop) {
+        const scored = pop.map(w => {
+          let sumFit = 0, sumMargin = 0, sumEsc = 0;
+          for (let i = 0; i < TRAIN_ANGLES.length; i++) {
+            const ep = evaluateEpisode(w, TRAIN_ANGLES[i]);
+            sumFit += ep.fit;
+            sumMargin += ep.margin;
+            sumEsc += ep.esc;
+          }
+          const kLen = TRAIN_ANGLES.length;
+          return {
+            w,
+            fit: sumFit / kLen,
+            trainMargin: sumMargin / kLen,
+            trainEsc: sumEsc / kLen
+          };
+        }).sort((a, b) => b.fit - a.fit);
+
+        // Evaluate #1 Champion on 8 unseen Held-Out Test angles
+        const champW = scored[0].w;
+        let testMarginSum = 0, testEscSum = 0;
+        for (let i = 0; i < TEST_ANGLES.length; i++) {
+          const ep = evaluateEpisode(champW, TEST_ANGLES[i]);
+          testMarginSum += ep.margin;
+          testEscSum += ep.esc;
+        }
+        const testMargin = testMarginSum / TEST_ANGLES.length;
+        const testEscRate = testEscSum / TEST_ANGLES.length;
+        const trainMeanMargin = scored.reduce((s, x) => s + x.trainMargin, 0) / scored.length;
+        const ne = Math.max(3, Math.round(scored.length * EL));
+
+        // Rotate display angle deterministically across held-out angles
+        const replayAngle = TEST_ANGLES[hist.length % TEST_ANGLES.length];
+
+        hist.push({
+          pop: scored.map(s => s.w),
+          replayAngle,
+          testMargin,
+          testEscRate,
+          trainBestMargin: scored[0].trainMargin,
+          trainMeanMargin,
+          ne
+        });
+
+        // Elitism + Uniform Crossover + Annealed Gaussian Mutation
+        const sg = Math.max(0.04, 0.35 * Math.pow(0.965, hist.length)) * MUT;
+        const elites = scored.slice(0, ne).map(s => s.w);
+        const nextGen = elites.map(w => w.slice());
+
+        while (nextGen.length < N) {
+          const p1 = elites[(rand() * ne) | 0];
+          const p2 = elites[(rand() * ne) | 0];
+          const child = new Array(NW);
+          for (let i = 0; i < NW; i++) {
+            const base = rand() < 0.5 ? p1[i] : p2[i];
+            child[i] = base + (rand() < 0.32 ? gauss() * sg : 0.0);
+          }
+          nextGen.push(child);
+        }
+        nextPop = nextGen;
+      }
+
+      // --- 7. GENERATION REPLAY & RESET ---
+      function showGeneration(index) {
+        gi = index;
+        const rec = hist[index];
+        live = rec.pop.map(w => createSwimmer(w, rec.replayAngle));
+        prevLive = live.map(cloneState);
+        stepAccum = 0.0;
+        shoreRipples = [];
+        state = "run";
+        renderGenChips();
+      }
+
+      function resetSwarm() {
+        seed = parseInt($("inpSeed").value, 10) || 42;
+        seedPRNG(seed);
+        hist = [];
+        const initPop = [];
+        for (let i = 0; i < N; i++) {
+          initPop.push(Array.from({ length: NW }, () => gauss() * 0.8));
+        }
+        trainOneGeneration(initPop);
+        showGeneration(0);
+      }
+
+      function renderGenChips() {
+        const container = $("genChipsContainer");
+        container.innerHTML = "";
+        hist.forEach((h, i) => {
+          const btn = document.createElement("button");
+          const pct = Math.round(100 * h.testEscRate);
+          btn.className = `gen-chip px-2.5 py-1 rounded-lg text-[11px] mono font-bold border transition ${
+            i === gi
+              ? "active"
+              : pct >= 75
+              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:border-cyan-400"
+              : "bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-400"
+          }`;
+          btn.textContent = `G${i + 1} · ${pct}%`;
+          btn.onclick = () => {
+            humanMode = false;
+            syncHumanUI();
+            showGeneration(i);
+          };
+          container.appendChild(btn);
+        });
+        container.scrollTop = container.scrollHeight;
+      }
+
+      // --- 8. MAIN ANIMATION LOOP ---
+      function tick() {
+        if (humanMode) {
+          stepHumanMode();
+        } else if (!paused) {
+          if (state === "run") {
+            const ch = live[0];
+            const effSpd = (ch && ch.done && SPD >= 1) ? SPD * 1.8 : SPD;
+            stepAccum += effSpd;
+            const steps = Math.floor(stepAccum);
+            stepAccum -= steps;
+
+            for (let s = 0; s < steps; s++) {
+              prevLive = live.map(cloneState);
+              let allDone = true;
+              for (let i = 0; i < live.length; i++) {
+                const sw = live[i];
+                if (!sw.done) {
+                  stepSwimmer(sw, i < 12);
+                  allDone = false;
+                }
+              }
+              if (ch && !ch.done) ch.tr.push([ch.x, ch.y]);
+              if (allDone) {
+                state = "hold";
+                holdTicks = 75;
+                stepAccum = 0;
+                break;
+              }
+            }
+          } else if (--holdTicks <= 0) {
+            if (gi < hist.length - 1) {
+              showGeneration(gi + 1);
+            } else if (autoAdvance) {
+              trainOneGeneration(nextPop);
+              showGeneration(hist.length - 1);
+            } else {
+              holdTicks = 1e9;
+            }
+          }
+        }
+
+        const alpha = (state === "run" && !paused && !humanMode && SPD < 1) ? stepAccum : 1.0;
+        drawArena(alpha);
+        requestAnimationFrame(tick);
+      }
+
+      function stepHumanMode() {
+        if (!humAgent) {
+          humAgent = createSwimmer(null, -0.75 * F);
+          humAgent.hd = 0;
+          humMsg = "";
+        }
+        if (!humAgent.done) {
+          humAgent.hd = Math.atan2(mouseWorld.y - humAgent.y, mouseWorld.x - humAgent.x);
+          const steps = SPD < 1 ? 1 : 2;
+          for (let k = 0; k < steps; k++) stepSwimmer(humAgent, true);
+          humAgent.tr.push([humAgent.x, humAgent.y]);
+        } else if (!humAgent.w) {
+          humAgent.w = 1;
+          humMsg = humAgent.esc
+            ? `🎉 ESCAPED! Shore margin: +${humAgent.margin.toFixed(2)} m ahead of the ${K.toFixed(2)}× shark!`
+            : `🦈 CAUGHT (${humAgent.margin.toFixed(2)} m)! Bait the shark inside the R/k circle until it is 180° behind you!`;
+          setTimeout(() => { humAgent = null; }, 2500);
+        }
+      }
+
+      // --- 9. POND ARENA RENDERER ---
+      function drawArena(alpha = 1.0) {
+        const w = pondCanvas.clientWidth;
+        const h = pondCanvas.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        if (pondCanvas.width !== w * dpr || pondCanvas.height !== h * dpr) {
+          pondCanvas.width = w * dpr;
+          pondCanvas.height = h * dpr;
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        const cx = w / 2;
+        const cy = h / 2 - 8;
+        const sc = (Math.min(w, h) * 0.42) / R;
+        viewGeom = { cx, cy, sc };
+        const P = (x, y) => [cx + x * sc, cy - y * sc];
+
+        const L = humanMode ? (humAgent ? [humAgent] : []) : live;
+        const ch = L[0];
+
+        // 1. Ocean Gradient
+        const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * sc);
+        gr.addColorStop(0, "#0d2847");
+        gr.addColorStop(0.75, "#071529");
+        gr.addColorStop(1, "#040b18");
+        ctx.fillStyle = gr;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R * sc, 0, F * 2);
+        ctx.fill();
+
+        // 2. Range Rings
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.08)";
+        ctx.lineWidth = 1;
+        for (let i = 1; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, (R * sc * i) / 4, 0, F * 2);
+          ctx.stroke();
+        }
+
+        // 3. Critical Angular Velocity Circle (r = R / k)
+        if (showCritRing) {
+          const critPx = (R / K) * sc;
+          ctx.save();
+          ctx.strokeStyle = "rgba(255, 200, 61, 0.55)";
+          ctx.lineWidth = 1.6;
+          ctx.setLineDash([6, 5]);
+          ctx.beginPath();
+          ctx.arc(cx, cy, critPx, 0, F * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.fillStyle = "rgba(255, 200, 61, 0.8)";
+          ctx.font = "700 10px 'JetBrains Mono', monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(`r = R/k (${(R / K).toFixed(2)}m)`, cx, cy - critPx - 5);
+        }
+
+        // 4. Shore Perimeter
+        ctx.shadowColor = "#ff4d6d";
+        ctx.shadowBlur = 14;
+        ctx.strokeStyle = "#ff4d6d";
+        ctx.lineWidth = 3.8;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R * sc, 0, F * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 5. Swarm Crowd
+        const rec = hist[gi];
+        const showSelection = state === "hold" && !humanMode && rec;
+
+        if (!humanMode && showCrowd) {
+          for (let i = L.length - 1; i >= 0; i--) {
+            const s = L[i];
+            const prv = prevLive[i] || s;
+            const ix = prv.x + (s.x - prv.x) * alpha;
+            const iy = prv.y + (s.y - prv.y) * alpha;
+            const [x, y] = P(ix, iy);
+
+            ctx.fillStyle = s.done
+              ? s.lost
+                ? "#64748b"
+                : s.esc
+                ? "#34f5a0"
+                : "#ff4d6d"
+              : "rgba(56, 189, 248, 0.62)";
+            ctx.beginPath();
+            ctx.arc(x, y, s.done ? 3.2 : 2.6, 0, F * 2);
+            ctx.fill();
+          }
+        }
+
+        // 6. Gold Elite Rings at End of Generation
+        if (showSelection) {
+          for (let i = 0; i < rec.ne; i++) {
+            const [x, y] = P(L[i].x, L[i].y);
+            ctx.strokeStyle = "#ffc83d";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 7.5, 0, F * 2);
+            ctx.stroke();
+          }
+        }
+
+        // 7. Champion Path, Marker & Shark
+        if (ch) {
+          const prvCh = (!humanMode && prevLive[0]) ? prevLive[0] : ch;
+          const chX = prvCh.x + (ch.x - prvCh.x) * alpha;
+          const chY = prvCh.y + (ch.y - prvCh.y) * alpha;
+          const chSh = prvCh.sh + wrap(ch.sh - prvCh.sh) * alpha;
+
+          ctx.lineWidth = 3.2;
+          ctx.lineCap = "round";
+          ctx.strokeStyle = "#34f5a0";
+          ctx.beginPath();
+          ch.tr.forEach((p, i) => {
+            const [x, y] = P(p[0], p[1]);
+            i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          });
+          const [px, py] = P(chX, chY);
+          ctx.lineTo(px, py);
+          ctx.stroke();
+
+          const th = Math.atan2(chY, chX);
+          const [sx, sy] = P(R * Math.cos(chSh), R * Math.sin(chSh));
+
+          // Champion Node
+          ctx.shadowColor = "#34f5a0";
+          ctx.shadowBlur = 14;
+          ctx.fillStyle = "#ffffff";
+          ctx.strokeStyle = "#34f5a0";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(px, py, 6.8, 0, F * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Shark Sprite
+          ctx.save();
+          ctx.translate(sx, sy);
+          ctx.rotate(-chSh - (F / 2) * Math.sign(wrap(th - chSh) || 1));
+          ctx.fillStyle = "#ff4d6d";
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(18, 0);
+          ctx.quadraticCurveTo(4, -10, -12, -5);
+          ctx.lineTo(-20, -11);
+          ctx.lineTo(-15, 0);
+          ctx.lineTo(-20, 11);
+          ctx.lineTo(-12, 5);
+          ctx.quadraticCurveTo(4, 10, 18, 0);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+
+          const degGap = Math.abs((wrap(th - chSh) * 180) / F);
+          ctx.fillStyle = degGap > 165 ? "#fde047" : "#bff7e0";
+          ctx.font = "800 11px 'JetBrains Mono', monospace";
+          ctx.textAlign = "left";
+          ctx.fillText(`${degGap.toFixed(0)}°`, px + 11, py - 9);
+        }
+
+        // 8. Shore Ripples
+        for (let i = shoreRipples.length - 1; i >= 0; i--) {
+          const rp = shoreRipples[i];
+          rp.rad += 0.7;
+          rp.alpha -= 0.035;
+          if (rp.alpha <= 0) {
+            shoreRipples.splice(i, 1);
+            continue;
+          }
+          const [rx, ry] = P(rp.x, rp.y);
+          ctx.save();
+          ctx.strokeStyle = rp.color;
+          ctx.globalAlpha = Math.max(0, rp.alpha);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(rx, ry, rp.rad, 0, F * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        updateHUD(ch);
+        drawLearningCurvePlot();
+        drawNeuralNet(ch);
+      }
+
+      // --- 10. HUD, CONTINUOUS LINE PLOT & NEURAL TOPOLOGY ---
+      function updateHUD(ch) {
+        let e = 0, c = 0, l = 0;
+        for (const s of live) {
+          if (s.done) {
+            if (s.lost) l++;
+            else if (s.esc) e++;
+            else c++;
+          }
+        }
+        $("hudGenBadge").textContent = humanMode ? "HUMAN" : `GEN ${gi + 1}`;
+        $("hudEsc").textContent = humanMode ? "-" : e;
+        $("hudCaught").textContent = humanMode ? "-" : c;
+        $("hudLost").textContent = humanMode ? "-" : l;
+        $("hudTime").textContent = ch ? ch.t.toFixed(1) : "0.0";
+
+        const rec = hist[gi];
+        if (rec && !humanMode) {
+          const m = rec.testMargin;
+          const pct = Math.round(rec.testEscRate * 100);
+          $("hudTestMargin").textContent = `${m >= 0 ? "+" : ""}${m.toFixed(2)}m (${pct}%)`;
+          $("hudTestMargin").className = `mono text-xs font-extrabold ${m > 0 ? "text-emerald-400" : "text-rose-400"}`;
+        } else {
+          $("hudTestMargin").textContent = "--";
+        }
+
+        let banner = "";
+        if (humanMode) {
+          banner = humMsg || "🖱️ Move cursor / touch inside the pond to steer! Lure the shark inside R/k until it is 180° behind you.";
+        } else if (state === "hold") {
+          banner = gi < hist.length - 1
+            ? `Replay of Generation ${gi + 1} complete.`
+            : autoAdvance
+            ? `✨ SELECTION: Top ${rec.ne} elites (gold rings) are crossed & mutated into Gen ${hist.length + 1}…`
+            : `Generation ${gi + 1} complete.`;
+        } else if (ch && ch.done) {
+          banner = ch.esc
+            ? `🏆 Champion ESCAPED! Shore arrival margin: +${ch.margin.toFixed(2)} m ahead of the shark.`
+            : ch.lost
+            ? `⏳ Champion timed out inside the pond.`
+            : `🦈 Champion CAUGHT at shore (margin: ${ch.margin.toFixed(2)} m).`;
+        } else if (ch) {
+          banner = `Gen ${gi + 1} Champion steering from (0,0) · Held-out 8-angle escape rate: ${rec ? Math.round(rec.testEscRate * 100) : 0}%`;
+        }
+        $("statusBanner").textContent = banner;
+      }
+
+      function drawLearningCurvePlot() {
+        const w = curveCanvas.clientWidth;
+        const h = curveCanvas.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        if (curveCanvas.width !== w * dpr || curveCanvas.height !== h * dpr) {
+          curveCanvas.width = w * dpr;
+          curveCanvas.height = h * dpr;
+        }
+        cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cx2.clearRect(0, 0, w, h);
+
+        const padL = 34, padR = 10, padT = 10, padB = 18;
+        const pw = w - padL - padR;
+        const ph = h - padT - padB;
+
+        // Straight-line radial dash baseline: R * (pi/k - DELTA_CAP)
+        const straightBaseline = R * (F / K - DELTA_CAP);
+
+        let minY = Math.min(-3.5, straightBaseline - 0.8);
+        let maxY = Math.max(2.5, straightBaseline + 1.5);
+        hist.forEach(r => {
+          minY = Math.min(minY, r.trainMeanMargin - 0.5, r.testMargin - 0.5);
+          maxY = Math.max(maxY, r.testMargin + 0.5);
+        });
+
+        const X = i => padL + (hist.length <= 1 ? pw / 2 : (i / Math.max(1, hist.length - 1)) * pw);
+        const Y = v => padT + ph - ((v - minY) / (maxY - minY)) * ph;
+
+        // Zero Escape Threshold Line (y = 0m)
+        const yZero = Y(0);
+        cx2.strokeStyle = "rgba(148, 163, 184, 0.25)";
+        cx2.lineWidth = 1;
+        cx2.beginPath();
+        cx2.moveTo(padL, yZero);
+        cx2.lineTo(w - padR, yZero);
+        cx2.stroke();
+
+        // Straight-Line Baseline (Dashed Gold)
+        const yBase = Y(straightBaseline);
+        cx2.save();
+        cx2.strokeStyle = "rgba(255, 200, 61, 0.65)";
+        cx2.lineWidth = 1.4;
+        cx2.setLineDash([4, 4]);
+        cx2.beginPath();
+        cx2.moveTo(padL, yBase);
+        cx2.lineTo(w - padR, yBase);
+        cx2.stroke();
+        cx2.restore();
+
+        // Y-axis labels
+        cx2.fillStyle = "#64748b";
+        cx2.font = "600 9px 'JetBrains Mono', monospace";
+        cx2.textAlign = "right";
+        cx2.fillText(`${maxY.toFixed(1)}m`, padL - 4, padT + 7);
+        cx2.fillText(`0.0m`, padL - 4, Math.min(h - padB, Math.max(padT + 8, yZero + 3)));
+        cx2.fillText(`${minY.toFixed(1)}m`, padL - 4, h - padB);
+
+        if (hist.length === 0) return;
+
+        // Plot Train Population Mean (Cyan)
+        cx2.strokeStyle = "#22d3ee";
+        cx2.lineWidth = 1.6;
+        cx2.beginPath();
+        hist.forEach((r, i) => {
+          const px = X(i), py = Y(r.trainMeanMargin);
+          i ? cx2.lineTo(px, py) : cx2.moveTo(px, py);
+        });
+        cx2.stroke();
+
+        // Plot Held-Out Test Champion Margin (Emerald)
+        cx2.strokeStyle = "#34f5a0";
+        cx2.lineWidth = 2.4;
+        cx2.beginPath();
+        hist.forEach((r, i) => {
+          const px = X(i), py = Y(r.testMargin);
+          i ? cx2.lineTo(px, py) : cx2.moveTo(px, py);
+        });
+        cx2.stroke();
+
+        // Highlight active generation dot
+        if (hist[gi]) {
+          const gx = X(gi), gy = Y(hist[gi].testMargin);
+          cx2.fillStyle = "#ffffff";
+          cx2.strokeStyle = "#34f5a0";
+          cx2.lineWidth = 2;
+          cx2.beginPath();
+          cx2.arc(gx, gy, 4, 0, F * 2);
+          cx2.fill();
+          cx2.stroke();
+        }
+      }
+
+      function drawNeuralNet(ch) {
+        const w = netCanvas.clientWidth;
+        const h = netCanvas.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        if (netCanvas.width !== w * dpr || netCanvas.height !== h * dpr) {
+          netCanvas.width = w * dpr;
+          netCanvas.height = h * dpr;
+        }
+        nx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        nx.clearRect(0, 0, w, h);
+
+        const W = humanMode ? null : (ch && ch.w);
+        if (!W) return;
+        forwardBrain(W, ch.x, ch.y, ch.sh, true);
+        if (!lastActivations) return;
+
+        const X = [46, w / 2, w - 52];
+        const pos = (n, l, i) => [X[l], ((i + 0.5) * (h - 14)) / n + 7];
+
+        const drawEdge = (val, a, b) => {
+          const mag = Math.min(0.85, Math.abs(val) * 0.48);
+          nx.strokeStyle = val > 0 ? `rgba(52, 245, 160, ${mag})` : `rgba(255, 77, 109, ${mag})`;
+          nx.lineWidth = Math.min(2.2, 0.35 + Math.abs(val) * 0.8);
+          nx.beginPath();
+          nx.moveTo(a[0], a[1]);
+          nx.lineTo(b[0], b[1]);
+          nx.stroke();
+        };
+
+        for (let j = 0; j < NH; j++) {
+          for (let i = 0; i < NI; i++) drawEdge(W[j * NI + i], pos(NI, 0, i), pos(NH, 1, j));
+          for (let o = 0; o < NO; o++) drawEdge(W[NI * NH + NH + o * NH + j], pos(NH, 1, j), pos(NO, 2, o));
+        }
+
+        const drawNode = (p, v, lLab = null, rLab = null) => {
+          const lum = 25 + Math.min(1, Math.abs(v)) * 40;
+          nx.fillStyle = `hsl(${v >= 0 ? 160 : 350} 90% ${lum}%)`;
+          nx.strokeStyle = "rgba(255,255,255,0.45)";
+          nx.lineWidth = 1.1;
+          nx.beginPath();
+          nx.arc(p[0], p[1], 5, 0, F * 2);
+          nx.fill();
+          nx.stroke();
+
+          nx.fillStyle = "#94a3b8";
+          nx.font = "600 9px 'JetBrains Mono', monospace";
+          if (lLab) { nx.textAlign = "right"; nx.fillText(lLab, p[0] - 8, p[1] + 3); }
+          if (rLab) { nx.textAlign = "left"; nx.fillText(rLab, p[0] + 8, p[1] + 3); }
+        };
+
+        const inNames = ["r/R", "cos", "sin", "1.0"];
+        const outNames = ["v_tan", "v_rad"];
+        lastActivations.inp.forEach((v, i) => drawNode(pos(NI, 0, i), v, inNames[i], null));
+        lastActivations.h.forEach((v, i) => drawNode(pos(NH, 1, i), v));
+        lastActivations.o.forEach((v, i) => drawNode(pos(NO, 2, i), Math.tanh(v), null, outNames[i]));
+      }
+
+      // --- 11. 4-QUADRANT HELD-OUT SOLUTION SCREENSHOT RENDERER ---
+      function renderSolutionScreenshot() {
+        const rec = hist[gi] || hist[hist.length - 1];
+        if (!rec) return;
+        const champW = rec.pop[0];
+
+        const W = blueprintCanvas.width;
+        const H = blueprintCanvas.height;
+        bx.clearRect(0, 0, W, H);
+
+        // Background
+        const bg = bx.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#050914");
+        bg.addColorStop(1, "#091326");
+        bx.fillStyle = bg;
+        bx.fillRect(0, 0, W, H);
+
+        // Header
+        bx.fillStyle = "#22d3ee";
+        bx.font = "800 14px 'JetBrains Mono', monospace";
+        bx.textAlign = "left";
+        bx.fillText(`SHARK BRAIN NEUROEVOLUTION · HELD-OUT SOLUTION REPORT (k = ${K.toFixed(2)}× | Gen ${gi + 1} | Seed ${seed})`, 24, 30);
+
+        const straightBaseline = R * (F / K - DELTA_CAP);
+        bx.fillStyle = "#94a3b8";
+        bx.font = "600 11px 'JetBrains Mono', monospace";
+        bx.fillText(
+          `8-Angle Held-Out Test Escape Rate: ${Math.round(rec.testEscRate * 100)}% | Mean Shore Margin: ${rec.testMargin >= 0 ? "+" : ""}${rec.testMargin.toFixed(2)}m | Straight-Line Baseline: ${straightBaseline >= 0 ? "+" : ""}${straightBaseline.toFixed(2)}m`,
+          24,
+          50
+        );
+
+        // Render 4 Held-Out Test Quadrants
+        const quadAngles = [-0.875 * F, -0.375 * F, 0.125 * F, 0.625 * F];
+        const centers = [
+          [205, 195],
+          [595, 195],
+          [205, 420],
+          [595, 420]
+        ];
+        const radPx = 92;
+        const sc = radPx / R;
+
+        quadAngles.forEach((ang, idx) => {
+          const [cx, cy] = centers[idx];
+          const P = (x, y) => [cx + x * sc, cy - y * sc];
+
+          const sim = createSwimmer(champW, ang);
+          while (!sim.done) {
+            stepSwimmer(sim, false);
+            sim.tr.push([sim.x, sim.y]);
+          }
+
+          // Pond Circle
+          bx.fillStyle = "#08172e";
+          bx.beginPath();
+          bx.arc(cx, cy, radPx, 0, F * 2);
+          bx.fill();
+
+          // Critical Ring r = R/k
+          bx.save();
+          bx.strokeStyle = "rgba(255, 200, 61, 0.55)";
+          bx.lineWidth = 1.4;
+          bx.setLineDash([4, 4]);
+          bx.beginPath();
+          bx.arc(cx, cy, (R / K) * sc, 0, F * 2);
+          bx.stroke();
+          bx.restore();
+
+          // Shore Perimeter
+          bx.strokeStyle = "#ff4d6d";
+          bx.lineWidth = 2.5;
+          bx.beginPath();
+          bx.arc(cx, cy, radPx, 0, F * 2);
+          bx.stroke();
+
+          // Champion Trajectory
+          bx.strokeStyle = "#34f5a0";
+          bx.lineWidth = 2.6;
+          bx.beginPath();
+          sim.tr.forEach((p, i) => {
+            const [x, y] = P(p[0], p[1]);
+            i ? bx.lineTo(x, y) : bx.moveTo(x, y);
+          });
+          bx.stroke();
+
+          // Start & End Points
+          const [ex, ey] = P(sim.x, sim.y);
+          bx.fillStyle = "#34f5a0";
+          bx.beginPath();
+          bx.arc(ex, ey, 5, 0, F * 2);
+          bx.fill();
+
+          const [sx, sy] = P(R * Math.cos(sim.sh), R * Math.sin(sim.sh));
+          bx.fillStyle = "#ff4d6d";
+          bx.strokeStyle = "#ffffff";
+          bx.lineWidth = 1.5;
+          bx.beginPath();
+          bx.arc(sx, sy, 6, 0, F * 2);
+          bx.fill();
+          bx.stroke();
+
+          // Quadrant Caption
+          bx.fillStyle = sim.esc ? "#34f5a0" : "#ff4d6d";
+          bx.font = "700 11px 'JetBrains Mono', monospace";
+          bx.textAlign = "center";
+          bx.fillText(
+            `Test #${idx + 1} (Shark ${(ang * 180 / F).toFixed(0)}°): ${sim.esc ? "ESCAPED" : "CAUGHT"} (${sim.margin >= 0 ? "+" : ""}${sim.margin.toFixed(2)}m in ${sim.t.toFixed(1)}s)`,
+            cx,
+            cy + radPx + 20
+          );
+        });
+      }
+
+      // --- 12. UI BINDINGS ---
+      function syncHumanUI() {
+        const btn = $("btnHuman");
+        if (humanMode) {
+          btn.className = "px-3 py-1.5 rounded-lg text-xs font-extrabold border border-amber-400 bg-amber-400 text-slate-950 transition";
+          $("humanBtnText").textContent = "Back to AI Swarm";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition";
+          $("humanBtnText").textContent = "Play Yourself";
+        }
+        humAgent = null;
+      }
+
+      function setSharkSpeedK(val) {
+        K = parseFloat(val);
+        $("rngK").value = K;
+        $("outK").textContent = `${K.toFixed(2)}×`;
+        $("headerKBadge").textContent = `${K.toFixed(2)}×`;
+        $("hudK").textContent = K.toFixed(2);
+        $("hudCritR").textContent = `R/k = ${(R / K).toFixed(2)}m`;
+      }
+
+      document.querySelectorAll(".stage-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".stage-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          setSharkSpeedK(btn.dataset.k);
+          humanMode = false;
+          syncHumanUI();
+          resetSwarm();
+        });
+      });
+
+      document.querySelectorAll(".speed-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          SPD = parseFloat(chip.dataset.spd);
+          document.querySelectorAll(".speed-chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+        });
+      });
+
+      $("rngK").addEventListener("input", e => setSharkSpeedK(e.target.value));
+      $("rngK").addEventListener("change", () => {
+        document.querySelectorAll(".stage-btn").forEach(b => b.classList.remove("active"));
+        resetSwarm();
+      });
+
+      $("rngPop").addEventListener("input", e => {
+        N = parseInt(e.target.value, 10);
+        $("outPop").textContent = N;
+      });
+      $("rngPop").addEventListener("change", resetSwarm);
+
+      $("rngElite").addEventListener("input", e => {
+        EL = parseInt(e.target.value, 10) / 100;
+        $("outElite").textContent = `${e.target.value}%`;
+      });
+
+      $("rngMut").addEventListener("input", e => {
+        MUT = parseFloat(e.target.value);
+        $("outMut").textContent = `${MUT.toFixed(1)}×`;
+      });
+
+      $("inpSeed").addEventListener("change", resetSwarm);
+      $("chkShowCrowd").addEventListener("change", e => { showCrowd = e.target.checked; });
+      $("chkShowCritRing").addEventListener("change", e => { showCritRing = e.target.checked; });
+      $("chkAutoAdvance").addEventListener("change", e => {
+        autoAdvance = e.target.checked;
+        if (autoAdvance && holdTicks > 1e6) holdTicks = 1;
+      });
+
+      $("btnPlayPause").addEventListener("click", () => {
+        paused = !paused;
+        $("playIcon").textContent = paused ? "▶" : "⏸";
+        $("playText").textContent = paused ? "Play" : "Pause";
+      });
+
+      $("btnSkipGen").addEventListener("click", () => {
+        if (humanMode || state !== "run") return;
+        for (const s of live) {
+          while (!s.done) {
+            stepSwimmer(s, false);
+            if (s === live[0]) s.tr.push([s.x, s.y]);
+          }
+        }
+        prevLive = live.map(cloneState);
+        state = "hold";
+        holdTicks = 40;
+      });
+
+      $("btnTrain10").addEventListener("click", () => {
+        humanMode = false;
+        syncHumanUI();
+        $("statusBanner").textContent = "⚡ Training 10 generations on 4 fixed shark angles…";
+        setTimeout(() => {
+          for (let i = 0; i < 10; i++) trainOneGeneration(nextPop);
+          showGeneration(hist.length - 1);
+        }, 20);
+      });
+
+      $("btnAutoSolve").addEventListener("click", () => {
+        humanMode = false;
+        syncHumanUI();
+        $("statusBanner").textContent = "🏆 Evolving until Champion passes Held-Out Test Set…";
+        setTimeout(() => {
+          let guard = 0;
+          while (guard < 40) {
+            const latest = hist[hist.length - 1];
+            if (latest.testEscRate >= 0.85 && latest.testMargin > 0.25 && guard >= 3) break;
+            trainOneGeneration(nextPop);
+            guard++;
+          }
+          showGeneration(hist.length - 1);
+          renderSolutionScreenshot();
+          $("screenshotModal").classList.remove("hidden");
+          $("screenshotModal").classList.add("flex");
+        }, 25);
+      });
+
+      $("btnReset").addEventListener("click", () => {
+        humanMode = false;
+        syncHumanUI();
+        resetSwarm();
+      });
+
+      $("btnHuman").addEventListener("click", () => {
+        humanMode = !humanMode;
+        syncHumanUI();
+      });
+
+      $("btnScreenshotModal").addEventListener("click", () => {
+        renderSolutionScreenshot();
+        $("screenshotModal").classList.remove("hidden");
+        $("screenshotModal").classList.add("flex");
+      });
+      $("btnCloseScreenshot").addEventListener("click", () => {
+        $("screenshotModal").classList.add("hidden");
+        $("screenshotModal").classList.remove("flex");
+      });
+      $("btnDownloadPNG").addEventListener("click", () => {
+        renderSolutionScreenshot();
+        const link = document.createElement("a");
+        link.download = `shark-brain-k${K.toFixed(2)}-gen${gi + 1}-seed${seed}.png`;
+        link.href = blueprintCanvas.toDataURL("image/png");
+        link.click();
+      });
+
+      $("btnPythonModal").addEventListener("click", () => {
+        $("pythonModal").classList.remove("hidden");
+        $("pythonModal").classList.add("flex");
+      });
+      $("btnClosePython").addEventListener("click", () => {
+        $("pythonModal").classList.add("hidden");
+        $("pythonModal").classList.remove("flex");
+      });
+      $("btnCopyPython").addEventListener("click", () => {
+        const text = $("pythonCodeText").innerText;
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        $("btnCopyPython").textContent = "✅ Copied!";
+        setTimeout(() => { $("btnCopyPython").textContent = "📋 Copy Python Code"; }, 2000);
+      });
+
+      const updatePointer = e => {
+        const rect = pondCanvas.getBoundingClientRect();
+        const pt = e.touches ? e.touches[0] : e;
+        mouseWorld.x = (pt.clientX - rect.left - viewGeom.cx) / viewGeom.sc;
+        mouseWorld.y = -(pt.clientY - rect.top - viewGeom.cy) / viewGeom.sc;
+      };
+      pondCanvas.addEventListener("mousemove", updatePointer);
+      pondCanvas.addEventListener("touchmove", updatePointer, { passive: true });
+      pondCanvas.addEventListener("touchstart", updatePointer, { passive: true });
+
+      setSharkSpeedK(3.60);
+      resetSwarm();
+      tick();
+    })();
+  </script>
+</body>
+</html>
