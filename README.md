@@ -1,6 +1,6 @@
 # 🦈 Shark & Circle
 
-**[▶ Live Demo](https://gouthamchoudary.github.io/shark_and_circle/)**
+**[▶ Live Demo](https://gouthamchoudary.github.io/shark_and_circle/)** &nbsp;·&nbsp; **[📄 Mathematical Solution (PDF)](solution.pdf)**
 
 ---
 

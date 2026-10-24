@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Build & Deploy
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,13 +15,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y texlive-latex-extra texlive-fonts-recommended texlive-pictures
+
+      - name: Compile PDF
+        run: |
+          pdflatex -interaction=nonstopmode solution.tex
+          pdflatex -interaction=nonstopmode solution.tex
+
+      - name: Commit PDF back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add solution.pdf
+          git diff --cached --quiet || git commit -m "ci: compile solution.pdf"
+          git push
+
   deploy:
+    needs: build-pdf
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
