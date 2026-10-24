@@ -25,7 +25,7 @@ The simulation runs entirely in your browser. No server, no GPU.
 
 | File | Description |
 |---|---|
-| [`swarm_neuroevolution_shark_escape.html`](swarm_neuroevolution_shark_escape.html) | Self-contained interactive demo |
+| [`index.html`](index.html) | Self-contained interactive demo |
 | [`main.py`](main.py) | Python version (NumPy + Matplotlib animation) |
 | [`shark_circle.ipynb`](shark_circle.ipynb) | Colab-ready notebook |
 
