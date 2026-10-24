@@ -53,8 +53,10 @@ After each generation, the best network is tested on 8 shark angles it has never
 ## Solution
 
 <img width="800" height="560" alt="shark-brain-k4 00-gen31-seed42" src="https://github.com/user-attachments/assets/2d8b2538-313f-4f61-8c97-29dc695ecfa5" />
-__
+
+---
 ## Training
+
 <img width="502" height="697" alt="image" src="https://github.com/user-attachments/assets/fa031fbc-fb6d-4907-86a6-bdbff0a290f7" />
 
 ## What the Simulation Discovers
