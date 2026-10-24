@@ -1,65 +1,67 @@
-# 🦈 Shark & Circle — Neuroevolution Lab
+# 🦈 Shark & Circle
 
-A browser-based simulation where a genetic algorithm evolves neural networks to solve the classic **"swimmer vs. shark" escape puzzle** — no hand-coded rules, just raw evolution.
-
-**[▶ Try it live](https://gouthamchoudary.github.io/shark_and_circle/)**
+**[▶ Live Demo](https://gouthamchoudary.github.io/shark_and_circle/)**
 
 ---
 
-## What is it?
+## The Problem
 
-A swimmer starts at the center of a circular pond. A shark circles the shore at `k×` the swimmer's speed. The goal: reach the shore before the shark gets there.
+A swimmer is at the center of a circular pond of radius `R`. A shark sits on the shore and can swim along the perimeter at `k` times the swimmer's speed.
 
-The math says it's possible if `k < π + 1 ≈ 4.14`. This simulation **rediscovers that strategy autonomously** through neuroevolution — no reward shaping, just a +1 for escaping.
+**Can the swimmer escape?**
 
-## How it works
-
-- **Population:** 150 neural networks (4→10→2 MLP, 54 weights each)
-- **Fitness:** Terminal-only — only the shore arrival margin counts, nothing else
-- **Evolution:** Elitism + uniform crossover + annealed Gaussian mutation
-- **Generalization:** Champion is tested on 8 held-out shark angles it never trained on
-
-The simulation runs entirely in your browser. No server, no GPU.
-
-## Files
-
-| File | Description |
-|---|---|
-| [`index.html`](index.html) | Self-contained interactive demo |
-| [`main.py`](main.py) | Python version (NumPy + Matplotlib animation) |
-| [`shark_circle.ipynb`](shark_circle.ipynb) | Colab-ready notebook |
-
-## Run locally
-
-Just open the HTML file in any browser:
-
-```
-open swarm_neuroevolution_shark_escape.html
-```
-
-Or for the Python version:
-
-```bash
-pip install numpy matplotlib
-python main.py
-```
-
-## Controls
-
-| Control | Action |
-|---|---|
-| **L1–L5 presets** | Set shark speed (3.0× → 4.25×) |
-| **🎮 Play Yourself** | Steer with your mouse |
-| **⚡ Train +10 Gens** | Fast-forward evolution |
-| **🏆 Auto-Solve** | Let it run to convergence |
-| **Generation chips** | Replay any past generation |
-
-## The math
-
-The optimal strategy: orbit inside the critical radius `r < R/k` to gain angular advantage, then sprint radially when the shark is 180° away.
-
-The theoretical escape margin is `R(π/k − δ_cap)` meters. The evolved networks consistently hit this ceiling.
+The swimmer escapes if they can reach any point on the shore before the shark gets there. The shark moves optimally — always chasing the swimmer's angle around the rim.
 
 ---
 
-*Built with vanilla JS + Canvas. No frameworks, no dependencies.*
+## Assumptions
+
+- The pond is a perfect circle of radius `R = 10m`
+- The swimmer starts exactly at the center
+- The swimmer's speed is `1 m/s` (the shark's speed is `k × 1 m/s`)
+- The shark is confined to the shore — it cannot cut through the pond
+- The shark always moves toward the swimmer's current angular position (optimal pursuit)
+- The swimmer is caught if the shark is within a small angular threshold `δ = 0.03 rad (~0.30m)` at the moment of shore contact
+- No currents, no obstacles, continuous time
+
+---
+
+## How It Works
+
+This simulation doesn't hard-code the escape strategy. Instead, it **evolves one from scratch** using a genetic algorithm.
+
+**Neural Network**
+Each swimmer is controlled by a small neural network: 4 inputs → 10 hidden neurons (tanh) → 2 outputs. The outputs determine the swimmer's heading at every timestep. Total: 54 weights per brain.
+
+**Inputs to the network**
+- Current radial distance from center `r / R`
+- `cos(gap)` and `sin(gap)` — where `gap` is the angular difference between swimmer and shark
+- A bias constant `1.0`
+
+**Fitness — Terminal Only**
+Swimmers get **zero feedback** while inside the pond. The only signal is what happens at the shore: how many meters ahead of the shark did they land? This is the fitness score. No reward shaping, no intermediate bonuses.
+
+**Evolution**
+- Start with 150 random networks
+- Run each against 4 fixed training shark angles
+- Keep the top 10% (elites), discard the rest
+- Breed the next generation via uniform crossover + Gaussian mutation
+- Mutation noise shrinks each generation (annealed)
+- Repeat
+
+**Generalization**
+After each generation, the best network is tested on 8 shark angles it has never seen. This confirms it learned the actual strategy, not just memorized the training cases.
+
+---
+
+## What the Simulation Discovers
+
+The mathematically optimal escape strategy has two phases:
+
+1. **Orbit phase** — Stay inside the critical radius `r < R/k`. At this distance, the swimmer can orbit the center faster than the shark circles the shore, letting them gain angular separation.
+2. **Sprint phase** — Once the shark is 180° away, swim straight out radially. With a full half-circle lead, the swimmer reaches the shore with margin to spare.
+
+The evolved neural networks reliably converge to this exact two-phase behavior within ~15–20 generations, matching the theoretical escape margin of `R(π/k − δ)` meters.
+
+**Escape is possible as long as `k < π + 1 ≈ 4.14`.**
+At `k = 4.25×`, the evolved networks fail — as the math predicts they should.
